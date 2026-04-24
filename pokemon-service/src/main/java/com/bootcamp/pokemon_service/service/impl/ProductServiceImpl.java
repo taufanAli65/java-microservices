@@ -1,5 +1,6 @@
 package com.bootcamp.pokemon_service.service.impl;
 
+import com.bootcamp.pokemon_service.dto.response.BaseResponse;
 import com.bootcamp.pokemon_service.dto.response.ResGetProductDto;
 import com.bootcamp.pokemon_service.entity.PokemonEntity;
 import com.bootcamp.pokemon_service.exception.DataNotFoundException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -36,27 +38,43 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Async
-    public void syncDataByThirdPartyApi() {
-        JsonNode response = pokemonClient.searchCards("");
-        JsonNode cardlist = response.get("data");
+    @Async("asyncExecutor")
+    public CompletableFuture<BaseResponse<String>> syncDataByThirdPartyApi() {
+        try {
+            JsonNode response = pokemonClient.searchCards("");
+            JsonNode cardlist = response.get("data");
 
-        if (cardlist == null || !cardlist.isArray()) {
-            return;
-        }
-
-        List<PokemonEntity> cards = new ArrayList<>();
-        for (JsonNode node : cardlist) {
-            try {
-                PokemonEntity card = mapToEntity(node);
-                cards.add(card);
-            } catch (Exception e) {
-                log.info(e.getMessage());
+            if (cardlist == null || !cardlist.isArray()) {
+                return CompletableFuture.completedFuture(
+                        BaseResponse.error("Invalid pokemon data received from third party API")
+                );
             }
-        }
 
-        pokemonCardRepository.saveAll(cards);
-        log.info("Done processing all pokemon data!");
+            List<PokemonEntity> cards = new ArrayList<>();
+            for (JsonNode node : cardlist) {
+                try {
+                    PokemonEntity card = mapToEntity(node);
+                    cards.add(card);
+                } catch (Exception e) {
+                    log.warn("Failed to map pokemon card payload: {}", node, e);
+                }
+            }
+
+            pokemonCardRepository.saveAll(cards);
+            log.info("Done processing all pokemon data. Total saved: {}", cards.size());
+
+            return CompletableFuture.completedFuture(
+                    BaseResponse.success(
+                            "Pokemon data synced successfully",
+                            "Successfully synced " + cards.size() + " pokemon cards"
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Failed to sync pokemon data from third party API", e);
+            return CompletableFuture.completedFuture(
+                    BaseResponse.error("Failed to sync pokemon data from third party API")
+            );
+        }
     }
 
     private PokemonEntity mapToEntity(JsonNode node) {

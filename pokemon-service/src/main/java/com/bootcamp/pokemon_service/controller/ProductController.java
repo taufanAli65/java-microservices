@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -19,18 +21,19 @@ public class ProductController {
     }
 
     @GetMapping
-    public BaseResponse<String> syncData() {
-        productService.syncDataByThirdPartyApi();
-        return BaseResponse.success("null");
+    public CompletableFuture<ResponseEntity<BaseResponse<String>>> syncData() {
+        return productService.syncDataByThirdPartyApi()
+                .thenApply(response -> response.getStatus()
+                        ? ResponseEntity.ok(response)
+                        : ResponseEntity.internalServerError().body(response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<ResGetProductDto>> getProduct (
+    public ResponseEntity<BaseResponse<ResGetProductDto>> getProduct(
             @PathVariable String id
-    ){
-            ResGetProductDto pokemon = productService.getProductById(id);
-            BaseResponse<ResGetProductDto> response = BaseResponse.success("Pokemon telah ditemukan", pokemon);
-            return ResponseEntity.ok(response);
-        }
+    ) {
+        ResGetProductDto pokemon = productService.getProductById(id);
+        BaseResponse<ResGetProductDto> response = BaseResponse.success("Pokemon telah ditemukan", pokemon);
+        return ResponseEntity.ok(response);
     }
-
+}

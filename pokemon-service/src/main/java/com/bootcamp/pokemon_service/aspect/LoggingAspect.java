@@ -1,12 +1,13 @@
 package com.bootcamp.pokemon_service.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -23,7 +24,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RequiredArgsConstructor
 public class LoggingAspect {
     private final ObjectMapper mapper;
-    private static final Logger DatabaseLogger = LoggerFactory.getLogger(LoggingAspect.class);
+    private static final Logger DATABASE_LOGGER = LoggerFactory.getLogger(LoggingAspect.class);
 
     @Around("execution(* com.bootcamp.pokemon_service.controller..*(..))")
     public Object logController(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -68,27 +69,38 @@ public class LoggingAspect {
         long startTime = System.currentTimeMillis();
         String methodName = joinPoint.getSignature().getName();
 
-        DatabaseLogger.info("Executing database query: {}", methodName);
+        DATABASE_LOGGER.info("Executing database query: {}", methodName);
 
         try {
             Object result = joinPoint.proceed();
             long timeTaken = System.currentTimeMillis() - startTime;
-            DatabaseLogger.info("Query {} completed in {} ms", methodName, timeTaken);
+            DATABASE_LOGGER.info("Query {} completed in {} ms", methodName, timeTaken);
             return result;
         } catch (Exception e) {
-            DatabaseLogger.error("Query {} failed: {}", methodName, e.getMessage());
+            DATABASE_LOGGER.error("Query {} failed: {}", methodName, e.getMessage());
             throw e;
         }
     }
 
-    @Around("@within(com.bootcamp.pokemon_service.rest.PokemonClient)")
+    @Around("execution(* com.bootcamp.pokemon_service.rest.PokemonClient.*(..))")
     public Object logFeignCall(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
+        String method = joinPoint.getSignature().toShortString();
+        log.info("Outgoing Feign request -> {}", method);
         try {
-            return joinPoint.proceed();
-        } finally {
+            Object result = joinPoint.proceed();
             long executionTime = System.currentTimeMillis() - start;
-            System.out.println(joinPoint.getSignature() + " executed in " + executionTime + "ms");
+            log.info("Incoming Feign response -> {} completed in {}ms", method, executionTime);
+            return result;
+        } catch (Exception e) {
+            long executionTime = System.currentTimeMillis() - start;
+            log.error("Feign call failed -> {} in {}ms, reason: {}", method, executionTime, e.getMessage());
+            throw e;
         }
+    }
+
+    @AfterThrowing(pointcut = "execution(* com.bootcamp.pokemon_service..*.*(..))", throwing = "errorObj")
+    public void logThrowException(JoinPoint joinPoint, Exception errorObj) {
+        log.error("Error(Message Only) -> {}", errorObj.getMessage());
     }
 }
