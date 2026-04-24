@@ -1,16 +1,18 @@
 package com.bootcamp.user_service.service.impl;
 
 import com.bootcamp.user_service.dto.request.ReqCreateUserDto;
+import com.bootcamp.user_service.dto.request.ReqLoginUserDto;
 import com.bootcamp.user_service.dto.response.BaseResponse;
 import com.bootcamp.user_service.dto.response.ResCreateUserDto;
 import com.bootcamp.user_service.dto.response.ResGetProductDto;
+import com.bootcamp.user_service.dto.response.ResLoginDto;
 import com.bootcamp.user_service.entity.UserEntity;
 import com.bootcamp.user_service.execption.BadRequestException;
 import com.bootcamp.user_service.execption.DataNotFoundException;
 import com.bootcamp.user_service.repository.UserRepository;
 import com.bootcamp.user_service.rest.PokemonClient;
 import com.bootcamp.user_service.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bootcamp.user_service.util.JwtUtil;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,10 +25,12 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PokemonClient pokemonClient;
+    private final JwtUtil jwtUtil;
 
-    public UserServiceImpl(UserRepository userRepository, PokemonClient pokemonClient) {
+    public UserServiceImpl(UserRepository userRepository, PokemonClient pokemonClient, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.pokemonClient = pokemonClient;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -38,8 +42,24 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
         user.setPhoneNumber(request.getPhoneNumber());
         return userRepository.save(user);
+    }
+
+    @Override
+    public ResLoginDto login(ReqLoginUserDto request) {
+        Optional<UserEntity> userOpt = userRepository.findByEmail(request.getEmail());
+        if (userOpt.isEmpty()) {
+            throw new DataNotFoundException("User Tidak Ditemukan");
+        }
+        UserEntity user = userOpt.get();
+        if(request.getPassword().equals(user.getPassword()));
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
+        return new ResLoginDto(
+                user.getEmail(),
+                token
+        );
     }
 
     @Override
@@ -117,13 +137,5 @@ public class UserServiceImpl implements UserService {
         } catch(FeignException.NotFound e) {
             throw new DataNotFoundException("Pokemon Tidak Ditemukan");
         }
-//        ObjectMapper mapper = new ObjectMapper();
-//        try {
-//            String a = mapper.writeValueAsString(pokemonClient.getDetailPokemon(id));
-//            log.info(a);
-//        } catch (Exception e) {
-//            throw new BadRequestException("aaa");
-//        }
-//        return null;
     }
 }

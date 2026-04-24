@@ -17,4 +17,7 @@ public class ReqCreateUserDto {
 
     @NotBlank(message = "Nomermu jangan kosong bos")
     private String phoneNumber;
+
+    @NotBlank(message = "Password jg diisi bos")
+    private String password;
 }

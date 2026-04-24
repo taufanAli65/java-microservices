@@ -2,11 +2,14 @@ package com.bootcamp.user_service.controller;
 
 
 import com.bootcamp.user_service.dto.request.ReqCreateUserDto;
+import com.bootcamp.user_service.dto.request.ReqLoginUserDto;
 import com.bootcamp.user_service.dto.response.BaseResponse;
 import com.bootcamp.user_service.dto.response.ResCreateUserDto;
+import com.bootcamp.user_service.dto.response.ResLoginDto;
 import com.bootcamp.user_service.entity.UserEntity;
 import com.bootcamp.user_service.service.UserService;
 import jakarta.validation.Valid;
+import org.hibernate.mapping.Any;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +24,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<BaseResponse<ResCreateUserDto>> createUser(
             @Valid @RequestBody ReqCreateUserDto request
             ) {
@@ -32,6 +35,18 @@ public class UserController {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getPhoneNumber()
+        ));
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<BaseResponse<ResLoginDto>> login(
+            @Valid @RequestBody ReqLoginUserDto request
+            ) {
+        ResLoginDto data = userService.login(request);
+        BaseResponse<ResLoginDto> response = BaseResponse.success(new ResLoginDto(
+                data.getEmail(),
+                data.getToken()
         ));
         return ResponseEntity.ok(response);
     }

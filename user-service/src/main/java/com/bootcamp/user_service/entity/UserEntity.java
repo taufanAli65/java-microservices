@@ -30,6 +30,9 @@ public class UserEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "password")
+    private String password;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
