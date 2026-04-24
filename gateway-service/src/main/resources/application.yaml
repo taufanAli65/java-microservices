@@ -11,3 +11,8 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
+jwt:
+  secret: 8ad57c3956e4a5b0e89af4c1affe6b220032aa188d7fe92754adf0a1e67476ca
+  expiration: 8640000
+  apiKey: alienz

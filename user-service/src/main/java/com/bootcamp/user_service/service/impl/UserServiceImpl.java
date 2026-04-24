@@ -54,7 +54,9 @@ public class UserServiceImpl implements UserService {
             throw new DataNotFoundException("User Tidak Ditemukan");
         }
         UserEntity user = userOpt.get();
-        if(request.getPassword().equals(user.getPassword()));
+        if(request.getPassword().equals(user.getPassword())) {
+            throw new BadRequestException("Password tidak sama bos");
+        };
         String token = jwtUtil.generateToken(user.getEmail(), user.getId());
         return new ResLoginDto(
                 user.getEmail(),
