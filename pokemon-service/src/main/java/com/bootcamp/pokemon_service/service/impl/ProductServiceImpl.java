@@ -9,6 +9,7 @@ import com.bootcamp.pokemon_service.rest.PokemonClient;
 import com.bootcamp.pokemon_service.service.ProductService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(
+            value = "pokemon:detail", key = "#p0"
+    )
     public ResGetProductDto getProductById(String id) {
 
         PokemonEntity response = pokemonCardRepository.findById(id).orElseThrow(

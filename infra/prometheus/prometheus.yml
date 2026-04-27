@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 20s
+
+scrape_configs:
+  - job_name: "bootcamp-batch17"
+    metrics_path: "/gateway/actuator/prometheus"
+    static_configs:
+      - targets: ["host.docker.internal:9139"]
