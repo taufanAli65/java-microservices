@@ -15,6 +15,7 @@ import com.bootcamp.user_service.service.UserService;
 import com.bootcamp.user_service.util.JwtUtil;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,11 +27,13 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PokemonClient pokemonClient;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, PokemonClient pokemonClient, JwtUtil jwtUtil) {
+    public UserServiceImpl(UserRepository userRepository, PokemonClient pokemonClient, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.pokemonClient = pokemonClient;
         this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -42,7 +45,7 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // TODO: Implement encrypt use bcrypt
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
         return userRepository.save(user);
     }
@@ -54,9 +57,9 @@ public class UserServiceImpl implements UserService {
             throw new DataNotFoundException("User Tidak Ditemukan");
         }
         UserEntity user = userOpt.get();
-        if(request.getPassword().equals(user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadRequestException("Password tidak sama bos");
-        };
+        }
         String token = jwtUtil.generateToken(user.getEmail(), user.getId());
         return new ResLoginDto(
                 user.getEmail(),
