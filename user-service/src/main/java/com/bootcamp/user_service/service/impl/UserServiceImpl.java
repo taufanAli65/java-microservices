@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(request.getPassword()); // TODO: Implement encrypt use bcrypt
         user.setPhoneNumber(request.getPhoneNumber());
         return userRepository.save(user);
     }
@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResCreateUserDto updateUser(Long id, ReqCreateUserDto request) {
+    public ResCreateUserDto updateUser(Long id, ReqCreateUserDto request) { // TODO: kasi penjagaan biar user cuman bisa update dirinya sendiri
         Optional<UserEntity> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             throw new DataNotFoundException("User Tidak Ditemukan");

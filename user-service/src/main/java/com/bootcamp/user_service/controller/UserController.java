@@ -8,6 +8,7 @@ import com.bootcamp.user_service.dto.response.ResCreateUserDto;
 import com.bootcamp.user_service.dto.response.ResLoginDto;
 import com.bootcamp.user_service.entity.UserEntity;
 import com.bootcamp.user_service.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.hibernate.mapping.Any;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +20,11 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final HttpServletRequest request;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, HttpServletRequest request) {
         this.userService = userService;
+        this.request = request;
     }
 
     @PostMapping("/register")
@@ -67,6 +70,14 @@ public class UserController {
     ) {
         ResCreateUserDto respCreateuser = userService.getUserById(id);
         BaseResponse<ResCreateUserDto> response = BaseResponse.success("Success get user by id", respCreateuser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/detail")
+    public ResponseEntity<BaseResponse<ResCreateUserDto>> getUserDetail () {
+        Long userId = Long.parseLong(request.getHeader("X-Authenticated-User-Id"));
+        ResCreateUserDto respCreateuser = userService.getUserById(userId);
+        BaseResponse<ResCreateUserDto> response = BaseResponse.success("Success get user detail", respCreateuser);
         return ResponseEntity.ok(response);
     }
 
