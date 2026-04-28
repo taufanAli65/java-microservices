@@ -5,6 +5,7 @@ import com.bootcamp.trade_service.dto.response.BaseResponse;
 import com.bootcamp.trade_service.dto.response.ResMyPokemonDto;
 import com.bootcamp.trade_service.entity.TradeHistoryEntity;
 import com.bootcamp.trade_service.entity.TradeStatus;
+import com.bootcamp.trade_service.exception.BadRequestException;
 import com.bootcamp.trade_service.exception.DataNotFoundException;
 import com.bootcamp.trade_service.producer.TradeProducer;
 import com.bootcamp.trade_service.repository.TradeRepository;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,6 +66,56 @@ class TradeServiceImplTest {
 
         assertThrows(
                 DataNotFoundException.class,
+                () -> tradeService.tradePokemon(1L, 2L, "requester-card", "receiver-card")
+        );
+
+        verify(tradeRepository, never()).save(any());
+        verify(tradeProducer, never()).sendTradeCreated(any());
+    }
+
+    @Test
+    void tradePokemonThrowsWhenRequesterPokemonHasPendingTrade() {
+        when(pokemonClient.getRequesterPokemon(1L))
+                .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("requester-card", "Pika", "Rare")))));
+        when(pokemonClient.getReceiverPokemon(2L))
+                .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("receiver-card", "Char", "Common")))));
+        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+                eq(TradeStatus.PENDING),
+                eq("requester-card"),
+                eq(TradeStatus.PENDING),
+                eq("requester-card")
+        )).thenReturn(true);
+
+        assertThrows(
+                BadRequestException.class,
+                () -> tradeService.tradePokemon(1L, 2L, "requester-card", "receiver-card")
+        );
+
+        verify(tradeRepository, never()).save(any());
+        verify(tradeProducer, never()).sendTradeCreated(any());
+    }
+
+    @Test
+    void tradePokemonThrowsWhenReceiverPokemonHasPendingTrade() {
+        when(pokemonClient.getRequesterPokemon(1L))
+                .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("requester-card", "Pika", "Rare")))));
+        when(pokemonClient.getReceiverPokemon(2L))
+                .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("receiver-card", "Char", "Common")))));
+        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+                eq(TradeStatus.PENDING),
+                eq("requester-card"),
+                eq(TradeStatus.PENDING),
+                eq("requester-card")
+        )).thenReturn(false);
+        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+                eq(TradeStatus.PENDING),
+                eq("receiver-card"),
+                eq(TradeStatus.PENDING),
+                eq("receiver-card")
+        )).thenReturn(true);
+
+        assertThrows(
+                BadRequestException.class,
                 () -> tradeService.tradePokemon(1L, 2L, "requester-card", "receiver-card")
         );
 

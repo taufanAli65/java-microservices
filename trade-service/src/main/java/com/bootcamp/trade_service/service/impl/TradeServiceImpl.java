@@ -5,6 +5,7 @@ import com.bootcamp.trade_service.dto.response.BaseResponse;
 import com.bootcamp.trade_service.dto.response.ResMyPokemonDto;
 import com.bootcamp.trade_service.entity.TradeHistoryEntity;
 import com.bootcamp.trade_service.entity.TradeStatus;
+import com.bootcamp.trade_service.exception.BadRequestException;
 import com.bootcamp.trade_service.exception.DataNotFoundException;
 import com.bootcamp.trade_service.producer.TradeProducer;
 import com.bootcamp.trade_service.repository.TradeRepository;
@@ -47,6 +48,8 @@ public class TradeServiceImpl implements TradeService {
                 receiverPokemonId,
                 "Pokemon receiver tidak ditemukan"
         );
+        ensurePokemonNotInPendingTrade(requesterPokemonId, "Pokemon requester sedang dalam trade pending");
+        ensurePokemonNotInPendingTrade(receiverPokemonId, "Pokemon receiver sedang dalam trade pending");
 
         TradeHistoryEntity trade = new TradeHistoryEntity();
         trade.setRequesterId(requesterId);
@@ -91,4 +94,17 @@ public class TradeServiceImpl implements TradeService {
             throw new DataNotFoundException(notFoundMessage);
         }
     }
+
+        private void ensurePokemonNotInPendingTrade(String pokemonId, String errorMessage) {
+                boolean isInPendingTrade = tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+                                TradeStatus.PENDING,
+                                pokemonId,
+                                TradeStatus.PENDING,
+                                pokemonId
+                );
+
+                if (isInPendingTrade) {
+                        throw new BadRequestException(errorMessage);
+                }
+        }
 }
