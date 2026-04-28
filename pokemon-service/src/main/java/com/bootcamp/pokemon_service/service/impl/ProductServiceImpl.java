@@ -7,6 +7,7 @@ import com.bootcamp.pokemon_service.exception.DataNotFoundException;
 import com.bootcamp.pokemon_service.repository.PokemonCardRepository;
 import com.bootcamp.pokemon_service.rest.PokemonClient;
 import com.bootcamp.pokemon_service.service.ProductService;
+import com.bootcamp.pokemon_service.utils.PokemonCardMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -57,7 +58,7 @@ public class ProductServiceImpl implements ProductService {
             List<PokemonEntity> cards = new ArrayList<>();
             for (JsonNode node : cardlist) {
                 try {
-                    PokemonEntity card = mapToEntity(node);
+                    PokemonEntity card = PokemonCardMapper.mapToEntity(node);
                     cards.add(card);
                 } catch (Exception e) {
                     log.warn("Failed to map pokemon card payload: {}", node, e);
@@ -79,15 +80,5 @@ public class ProductServiceImpl implements ProductService {
                     BaseResponse.error("Failed to sync pokemon data from third party API")
             );
         }
-    }
-
-    private PokemonEntity mapToEntity(JsonNode node) {
-        PokemonEntity card = new PokemonEntity();
-        card.setId(node.get("id").asText());
-        card.setName(node.get("name").asText());
-        card.setRarity(node.get("rarity").asText("Common"));
-        card.setRawData(node);
-
-        return card;
     }
 }

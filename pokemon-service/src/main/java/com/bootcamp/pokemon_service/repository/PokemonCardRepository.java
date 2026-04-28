@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface PokemonCardRepository extends JpaRepository<PokemonEntity, String> {
     Optional<PokemonEntity> findById(String id);
+    Boolean existById(String id);
 }
