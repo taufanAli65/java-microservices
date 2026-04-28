@@ -7,13 +7,8 @@ import com.bootcamp.pokemon_service.dto.response.ResMyPokemonDto;
 import com.bootcamp.pokemon_service.service.PokemonService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -28,7 +23,7 @@ public class PokemonController {
         this.request = request;
     }
 
-    @GetMapping("/claim-starter")
+    @PostMapping("/claim-starter")
     public ResponseEntity<BaseResponse<ResClaimPokemon>> claimPokemon(
             @Valid @RequestBody ReqClaimPokemonDto pokemon
             ) {

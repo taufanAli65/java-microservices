@@ -19,7 +19,7 @@ public class ProductConsumer {
     @KafkaListener(
             id = "PRODUCT_VIEW",
             topics = "PRODUCT_VIEW",
-            containerFactory = "",
+            containerFactory = "productViewMessageConcurrentKafkaListenerContainerFactory",
             autoStartup = "true"
     )
     public void processProductView(ProductViewMessage message) {
