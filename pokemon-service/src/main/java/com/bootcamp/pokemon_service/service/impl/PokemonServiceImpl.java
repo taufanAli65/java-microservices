@@ -68,6 +68,10 @@ public class PokemonServiceImpl implements PokemonService {
             claimed = userPokemonRepository.findByUserIdAndPokemonId_Rarity(userId, rarity.trim());
         }
 
+        if (claimed.isEmpty()) {
+            throw new DataNotFoundException("User Tidak Ditemukan atau TIdak Memiliki Pokemon");
+        }
+
         Comparator<ResMyPokemonDto> comparator = Comparator
                 .comparing(ResMyPokemonDto::getId, Comparator.nullsLast(String::compareTo));
 
