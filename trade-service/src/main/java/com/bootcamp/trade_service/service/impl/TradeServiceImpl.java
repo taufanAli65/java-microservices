@@ -48,8 +48,16 @@ public class TradeServiceImpl implements TradeService {
                 receiverPokemonId,
                 "Pokemon receiver tidak ditemukan"
         );
-        ensurePokemonNotInPendingTrade(requesterPokemonId, "Pokemon requester sedang dalam trade pending");
-        ensurePokemonNotInPendingTrade(receiverPokemonId, "Pokemon receiver sedang dalam trade pending");
+        ensurePokemonNotInPendingTrade(
+                requesterId,
+                requesterPokemonId,
+                "Pokemon requester sedang dalam trade pending"
+        );
+        ensurePokemonNotInPendingTrade(
+                receiverId,
+                receiverPokemonId,
+                "Pokemon receiver sedang dalam trade pending"
+        );
 
         TradeHistoryEntity trade = new TradeHistoryEntity();
         trade.setRequesterId(requesterId);
@@ -95,11 +103,12 @@ public class TradeServiceImpl implements TradeService {
         }
     }
 
-        private void ensurePokemonNotInPendingTrade(String pokemonId, String errorMessage) {
-                boolean isInPendingTrade = tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+        private void ensurePokemonNotInPendingTrade(Long ownerId, String pokemonId, String errorMessage) {
+                boolean isInPendingTrade = tradeRepository.existsPendingTradeForOwnerPokemon(
                                 TradeStatus.PENDING,
+                                ownerId,
                                 pokemonId,
-                                TradeStatus.PENDING,
+                                ownerId,
                                 pokemonId
                 );
 

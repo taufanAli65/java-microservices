@@ -79,10 +79,11 @@ class TradeServiceImplTest {
                 .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("requester-card", "Pika", "Rare")))));
         when(pokemonClient.getReceiverPokemon(2L))
                 .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("receiver-card", "Char", "Common")))));
-        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+        when(tradeRepository.existsPendingTradeForOwnerPokemon(
                 eq(TradeStatus.PENDING),
+                eq(1L),
                 eq("requester-card"),
-                eq(TradeStatus.PENDING),
+                eq(1L),
                 eq("requester-card")
         )).thenReturn(true);
 
@@ -101,16 +102,18 @@ class TradeServiceImplTest {
                 .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("requester-card", "Pika", "Rare")))));
         when(pokemonClient.getReceiverPokemon(2L))
                 .thenReturn(ResponseEntity.ok(BaseResponse.success(List.of(new ResMyPokemonDto("receiver-card", "Char", "Common")))));
-        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+        when(tradeRepository.existsPendingTradeForOwnerPokemon(
                 eq(TradeStatus.PENDING),
+                eq(1L),
                 eq("requester-card"),
-                eq(TradeStatus.PENDING),
+                eq(1L),
                 eq("requester-card")
         )).thenReturn(false);
-        when(tradeRepository.existsByStatusAndRequesterPokemonIdOrStatusAndReceiverPokemonId(
+        when(tradeRepository.existsPendingTradeForOwnerPokemon(
                 eq(TradeStatus.PENDING),
+                eq(2L),
                 eq("receiver-card"),
-                eq(TradeStatus.PENDING),
+                eq(2L),
                 eq("receiver-card")
         )).thenReturn(true);
 
