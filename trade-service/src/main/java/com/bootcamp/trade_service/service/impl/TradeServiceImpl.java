@@ -38,16 +38,20 @@ public class TradeServiceImpl implements TradeService {
     @Override
     @Transactional
     public void tradePokemon(Long requesterId, Long receiverId, String requesterPokemonId, String receiverPokemonId) {
-        ensurePokemonOwnership(
-                pokemonClient.getRequesterPokemon(requesterId).getBody(),
+        BaseResponse<List<ResMyPokemonDto>> requesterResponse = pokemonClient.getRequesterPokemon(requesterId).getBody();
+        BaseResponse<List<ResMyPokemonDto>> receiverResponse = pokemonClient.getReceiverPokemon(receiverId).getBody();
+
+        ResMyPokemonDto requesterPokemon = ensurePokemonOwnershipAndGet(
+                requesterResponse,
                 requesterPokemonId,
                 "Pokemon requester tidak ditemukan"
         );
-        ensurePokemonOwnership(
-                pokemonClient.getReceiverPokemon(receiverId).getBody(),
+        ResMyPokemonDto receiverPokemon = ensurePokemonOwnershipAndGet(
+                receiverResponse,
                 receiverPokemonId,
                 "Pokemon receiver tidak ditemukan"
         );
+        ensureSameRarity(requesterPokemon, receiverPokemon);
         ensurePokemonNotInPendingTrade(
                 requesterId,
                 requesterPokemonId,
@@ -87,33 +91,45 @@ public class TradeServiceImpl implements TradeService {
         tradeRepository.save(trade);
     }
 
-    private void ensurePokemonOwnership(
+    private ResMyPokemonDto ensurePokemonOwnershipAndGet(
             BaseResponse<List<ResMyPokemonDto>> response,
             String expectedPokemonId,
             String notFoundMessage
     ) {
         List<ResMyPokemonDto> pokemons = response == null ? List.of() : response.getData();
-        boolean isOwned = pokemons != null && pokemons.stream()
+        ResMyPokemonDto ownedPokemon = pokemons == null ? null : pokemons.stream()
                 .filter(Objects::nonNull)
-                .map(ResMyPokemonDto::getId)
-                .anyMatch(expectedPokemonId::equals);
+                .filter(pokemon -> expectedPokemonId.equals(pokemon.getId()))
+                .findFirst()
+                .orElse(null);
 
-        if (!isOwned) {
+        if (ownedPokemon == null) {
             throw new DataNotFoundException(notFoundMessage);
+        }
+
+        return ownedPokemon;
+    }
+
+    private void ensureSameRarity(ResMyPokemonDto requesterPokemon, ResMyPokemonDto receiverPokemon) {
+        String requesterRarity = requesterPokemon == null ? null : requesterPokemon.getRarity();
+        String receiverRarity = receiverPokemon == null ? null : receiverPokemon.getRarity();
+
+        if (!Objects.equals(requesterRarity, receiverRarity)) {
+            throw new BadRequestException("Pokemon rarity harus sama untuk trade");
         }
     }
 
-        private void ensurePokemonNotInPendingTrade(Long ownerId, String pokemonId, String errorMessage) {
-                boolean isInPendingTrade = tradeRepository.existsPendingTradeForOwnerPokemon(
-                                TradeStatus.PENDING,
-                                ownerId,
-                                pokemonId,
-                                ownerId,
-                                pokemonId
-                );
+    private void ensurePokemonNotInPendingTrade(Long ownerId, String pokemonId, String errorMessage) {
+        boolean isInPendingTrade = tradeRepository.existsPendingTradeForOwnerPokemon(
+                TradeStatus.PENDING,
+                ownerId,
+                pokemonId,
+                ownerId,
+                pokemonId
+        );
 
-                if (isInPendingTrade) {
-                        throw new BadRequestException(errorMessage);
-                }
+        if (isInPendingTrade) {
+            throw new BadRequestException(errorMessage);
         }
+    }
 }
